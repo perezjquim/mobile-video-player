@@ -29,6 +29,12 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        _stopAction();
+    }
+
+    @Override
     protected void onDestroy()
     {
         super.onDestroy();
@@ -54,71 +60,138 @@ public class MainActivity extends AppCompatActivity
 
     private void _handleSensors()
     {
-        Context me = this;
+            OrientationDetector.OrientationListener l = new OrientationDetector.OrientationListener()
+            {
+                @Override
+                public void onTopSideUp()
+                {
+                        System.out.println("== top side up");
+                        switch (_getOrientation())
+                        {
+                            case ORIENTATION_LANDSCAPE:
+                                _doAction(() -> _forward());
+                                break;
+                            case ORIENTATION_LANDSCAPE_REVERSE:
+                                _doAction(() -> _backward());
+                                break;
+                            default:
+                                _stopAction();
+                                break;
+                        }
+                }
 
-        OrientationDetector.OrientationListener l = new OrientationDetector.OrientationListener()
+                @Override
+                public void onBottomSideUp()
+                {
+                        System.out.println("== btm side up");
+                        switch (_getOrientation())
+                        {
+                            case ORIENTATION_LANDSCAPE:
+                                _doAction(() -> _backward());
+                                break;
+                            case ORIENTATION_LANDSCAPE_REVERSE:
+                                _doAction(() -> _forward());
+                                break;
+                            default:
+                                _stopAction();
+                                break;
+                        }
+                }
+
+                @Override
+                public void onRightSideUp()
+                {
+                        System.out.println("== right side up");
+                        switch (_getOrientation())
+                        {
+                            case ORIENTATION_PORTRAIT:
+                                _doAction(() -> _backward());
+                                break;
+                            case ORIENTATION_PORTRAIT_REVERSE:
+                                _doAction(() -> _forward());
+                                break;
+                            default:
+                                _stopAction();
+                                break;
+                        }
+                }
+
+                @Override
+                public void onLeftSideUp()
+                {
+                        System.out.println("== left side up");
+                        switch (_getOrientation())
+                        {
+                            case ORIENTATION_PORTRAIT:
+                                _doAction(() -> _forward());
+                                break;
+                            case ORIENTATION_PORTRAIT_REVERSE:
+                                _doAction(() -> _backward());
+                                break;
+                            default:
+                                _stopAction();
+                                break;
+                        }
+                }
+            };
+
+            Sensey.getInstance().startOrientationDetection(l);
+    }
+
+    private static Thread tAction;
+    private static final int SAMPLING_RATE = 500;
+    private boolean running = false;
+    private void _doAction(Runnable action)
+    {
+        new Thread(()->
         {
-            @Override public void onTopSideUp()
-            {
-                System.out.println("===");
-                switch(_getOrientation())
-                {
-                    case ORIENTATION_LANDSCAPE:
-                        _forward();
-                        break;
-                    case ORIENTATION_LANDSCAPE_REVERSE:
-                        _backward();
-                        break;
-                }
-                System.out.println("===");
-            }
+            _stopAction();
 
-            @Override public void onBottomSideUp()
+            tAction = new Thread(() ->
             {
-                System.out.println("===");
-                switch(_getOrientation())
+                while (running)
                 {
-                    case ORIENTATION_LANDSCAPE:
-                         _backward();
-                         break;
-                    case ORIENTATION_LANDSCAPE_REVERSE:
-                        _forward();
-                        break;
+                    action.run();
+                    try
+                    {
+                        Thread.sleep(SAMPLING_RATE);
+                    } catch (InterruptedException e)
+                    {
+                        e.printStackTrace();
+                    }
                 }
-                System.out.println("===");
-            }
+            });
 
-            @Override public void onRightSideUp()
-            {
-                System.out.println("===");
-                switch(_getOrientation())
-                {
-                    case ORIENTATION_PORTRAIT:
-                        _backward();
-                        break;
-                    case ORIENTATION_PORTRAIT_REVERSE:
-                        _forward();
-                        break;
-                }
-                System.out.println("===");
-            }
+            running = true;
 
-            @Override public void onLeftSideUp()
+            tAction.start();
+        }).start();
+    }
+
+    private void _stopAction()
+    {
+        if(tAction != null)
+        {
+            running = false;
+            try
             {
-                System.out.println("===");
-                switch(_getOrientation())
-                {
-                    case ORIENTATION_PORTRAIT:
-                        _forward();
-                        break;
-                    case ORIENTATION_PORTRAIT_REVERSE:
-                        _backward();
-                        break;
-                }
-                System.out.println("===");
+                tAction.join();
             }
-        };
-        Sensey.getInstance().startOrientationDetection(l);
+            catch(InterruptedException e)
+            {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void _increaseVolume()
+    {
+        System.out.println("aumentar volume");
+    }
+
+    private void _decreaseVolume()
+    {
+        System.out.println("baixar volume");
     }
 
     private void _forward()
