@@ -35,4 +35,5 @@ dependencies {
     implementation 'com.github.perezjquim:sharedprefhelper:master-SNAPSHOT'
     implementation 'com.github.perezjquim:permissionchecker:master-SNAPSHOT'
     implementation 'com.github.perezjquim:uihelper:-SNAPSHOT'
+    implementation 'com.github.nisrulz:sensey:1.8.0'
 }
