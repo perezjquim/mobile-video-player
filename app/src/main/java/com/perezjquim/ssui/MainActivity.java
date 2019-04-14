@@ -35,9 +35,24 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
+    protected void onPause()
+    {
+        super.onPause();
+        _stopAction();
+    }
+
+    @Override
+    protected void onStop()
+    {
+        super.onStop();
+        _stopAction();
+    }
+
+    @Override
     protected void onDestroy()
     {
         super.onDestroy();
+        _stopAction();
         Sensey.getInstance().stop();
     }
 
