@@ -5,57 +5,47 @@ import android.os.*;
 import android.content.*;
 import android.content.res.*;
 import android.view.Surface;
-
+import android.hardware.*;
 import com.perezjquim.*;
-import com.github.nisrulz.sensey.*;
 import java.lang.*;
+import java.util.*;
 
-public class MainActivity extends AppCompatActivity
+public class MainActivity extends AppCompatActivity implements SensorEventListener
 {
+    /***                         ***/
+    /*** OVERRIDES ***/
+    /***                         ***/
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
-        /***********/
-        /*** init ***/
+        // inicialização
         super.onCreate(savedInstanceState);
         super.setTheme(R.style.AppTheme);
         setContentView(R.layout.activity_main);
         PermissionChecker.init(this);
-        Sensey.getInstance().init(this);
-        /*** init ***/
-        /***********/
 
         _handleSensors();
     }
 
     @Override
-    public void onConfigurationChanged(Configuration newConfig) {
+    public void onConfigurationChanged(Configuration newConfig)
+    {
         super.onConfigurationChanged(newConfig);
-        _stopAction();
+    }
+
+    @Override
+    protected void onResume()
+    {
+        super.onResume();
+        _sensors.forEach((key,sensor) -> _sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_NORMAL));
     }
 
     @Override
     protected void onPause()
     {
         super.onPause();
-        _stopAction();
+        _sensorManager.unregisterListener(this);
     }
-
-    @Override
-    protected void onStop()
-    {
-        super.onStop();
-        _stopAction();
-    }
-
-    @Override
-    protected void onDestroy()
-    {
-        super.onDestroy();
-        _stopAction();
-        Sensey.getInstance().stop();
-    }
-
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data)
@@ -63,160 +53,202 @@ public class MainActivity extends AppCompatActivity
         super.onActivityResult(requestCode, resultCode, data);
         switch(requestCode)
         {
-            /*** permissões ***/
-            /*********************/
+            // tratamento das permissões
             case PermissionChecker.REQUEST_CODE:
                 PermissionChecker.restart();
                 break;
-            /********************/
-            /********************/
         }
     }
 
+    @Override
+    public void onAccuracyChanged(Sensor arg0, int arg1) { }
+
+    @Override
+    public void onSensorChanged(SensorEvent event)
+    {
+        int type = event.sensor.getType();
+        switch(type)
+        {
+            case Sensor.TYPE_ACCELEROMETER:
+                _handleAccelerometer(event);
+                break;
+        }
+    }
+
+    /***                                        ***/
+    /*** IMPLEMENTAÇÕES ***/
+    /***                                       ***/
+    private SensorManager _sensorManager;
+    private HashMap<String,Sensor> _sensors = new HashMap<>();
     private void _handleSensors()
     {
-            OrientationDetector.OrientationListener l = new OrientationDetector.OrientationListener()
-            {
-                @Override
-                public void onTopSideUp()
-                {
-                        System.out.println("== top side up");
-                        switch (_getOrientation())
-                        {
-                            case ORIENTATION_LANDSCAPE:
-                                _doAction(() -> _forward());
-                                break;
-                            case ORIENTATION_LANDSCAPE_REVERSE:
-                                _doAction(() -> _backward());
-                                break;
-                            default:
-                                _stopAction();
-                                break;
-                        }
-                }
-
-                @Override
-                public void onBottomSideUp()
-                {
-                        System.out.println("== btm side up");
-                        switch (_getOrientation())
-                        {
-                            case ORIENTATION_LANDSCAPE:
-                                _doAction(() -> _backward());
-                                break;
-                            case ORIENTATION_LANDSCAPE_REVERSE:
-                                _doAction(() -> _forward());
-                                break;
-                            default:
-                                _stopAction();
-                                break;
-                        }
-                }
-
-                @Override
-                public void onRightSideUp()
-                {
-                        System.out.println("== right side up");
-                        switch (_getOrientation())
-                        {
-                            case ORIENTATION_PORTRAIT:
-                                _doAction(() -> _backward());
-                                break;
-                            case ORIENTATION_PORTRAIT_REVERSE:
-                                _doAction(() -> _forward());
-                                break;
-                            default:
-                                _stopAction();
-                                break;
-                        }
-                }
-
-                @Override
-                public void onLeftSideUp()
-                {
-                        System.out.println("== left side up");
-                        switch (_getOrientation())
-                        {
-                            case ORIENTATION_PORTRAIT:
-                                _doAction(() -> _forward());
-                                break;
-                            case ORIENTATION_PORTRAIT_REVERSE:
-                                _doAction(() -> _backward());
-                                break;
-                            default:
-                                _stopAction();
-                                break;
-                        }
-                }
-            };
-
-            Sensey.getInstance().startOrientationDetection(l);
+        _sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        _sensors.put("accelerometer", _sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER));
     }
 
-    private static Thread tAction;
-    private static final int SAMPLING_RATE = 500;
-    private boolean running = false;
-    private void _doAction(Runnable action)
+    private static final int DOWN_THRESHOLD = 9;
+    private static final int UP_THRESHOLD = 4;
+    private void _handleAccelerometer(SensorEvent event)
     {
-        new Thread(()->
-        {
-            _stopAction();
+        int orientation = _getOrientation();
+        float x = event.values[0];
+        float y = event.values[1];
+        float z = event.values[2];
+//        System.out.println("===");
+//        System.out.println("x: "+x);
+//        System.out.println("y:" +y);
+//        System.out.println("z: "+z);
 
-            tAction = new Thread(() ->
-            {
-                while (running)
+        switch(orientation)
+        {
+            // PORTRAIT
+            case ORIENTATION_PORTRAIT:
+                if(isTilting(event))
                 {
-                    action.run();
-                    try
+                    if (Math.abs(x) > Math.abs(y))
                     {
-                        Thread.sleep(SAMPLING_RATE);
-                    } catch (InterruptedException e)
+                        if (x < 0)
+                        {
+                            _handleTiltRight();
+                        }
+                        else if (x > 0)
+                        {
+                            _handleTiltLeft();
+                        }
+                    }
+                    else
                     {
-                        e.printStackTrace();
+                        if (y < UP_THRESHOLD)
+                        {
+                            _handleTiltUp();
+                        }
+                        else if (y > DOWN_THRESHOLD)
+                        {
+                            _handleTiltDown();
+                        }
                     }
                 }
-            });
+                break;
 
-            running = true;
+            // PORTRAIT (INVERSO)
+            case ORIENTATION_PORTRAIT_REVERSE:
+                if(isTilting(event))
+                {
+                    if (Math.abs(x) > Math.abs(y))
+                    {
+                        if (x < 0)
+                        {
+                            _handleTiltLeft();
+                        }
+                        else if (x > 0)
+                        {
+                            _handleTiltRight();
+                        }
+                    }
+                    else
+                    {
+                        if (y < -DOWN_THRESHOLD)
+                        {
+                            _handleTiltDown();
+                        }
+                        else if (y > UP_THRESHOLD)
+                        {
+                            _handleTiltUp();
+                        }
+                    }
+                }
+                break;
 
-            tAction.start();
-        }).start();
-    }
+            // LANDSCAPE
+            case ORIENTATION_LANDSCAPE:
+                if(isTilting(event))
+                {
+                    if (Math.abs(x) > Math.abs(y))
+                    {
+                        if (x < UP_THRESHOLD)
+                        {
+                            _handleTiltUp();
+                        }
+                        else if (x > DOWN_THRESHOLD)
+                        {
+                            _handleTiltDown();
+                        }
+                    }
+                    else
+                    {
+                        if (y < 0)
+                        {
+                            _handleTiltLeft();
+                        }
+                        else if (y > 0)
+                        {
+                            _handleTiltRight();
+                        }
+                    }
+                }
+                break;
 
-    private void _stopAction()
-    {
-        if(tAction != null)
-        {
-            running = false;
-            try
-            {
-                tAction.join();
-            }
-            catch(InterruptedException e)
-            {
-                e.printStackTrace();
-            }
+            // LANDSCAPE (INVERSO)
+            case ORIENTATION_LANDSCAPE_REVERSE:
+                if(isTilting(event))
+                {
+                    if (Math.abs(x) > Math.abs(y))
+                    {
+                        if (x < -DOWN_THRESHOLD)
+                        {
+                            _handleTiltDown();
+                        }
+                        else if (x > UP_THRESHOLD)
+                        {
+                            _handleTiltUp();
+                        }
+                    }
+                    else
+                    {
+                        if (y < 0)
+                        {
+                            _handleTiltRight();
+                        }
+                        else if (y > 0)
+                        {
+                            _handleTiltLeft();
+                        }
+                    }
+                }
+                break;
         }
     }
 
-    private void _increaseVolume()
+    private void _handleTiltUp()
     {
-        System.out.println("aumentar volume");
+        System.out.println(">> up");
+    }
+    private void _handleTiltDown()
+    {
+        System.out.println(">> down");
+    }
+    private void _handleTiltLeft()
+    {
+        System.out.println(">> left");
+    }
+    private void _handleTiltRight()
+    {
+        System.out.println(">> right");
     }
 
-    private void _decreaseVolume()
+    private static final int TILTING_THRESHOLD = 2;
+    private boolean isTilting(SensorEvent event)
     {
-        System.out.println("baixar volume");
-    }
-
-    private void _forward()
-    {
-        System.out.println("avançar");
-    }
-
-    private void _backward()
-    {
-        System.out.println("rebobinar");
+        float x = event.values[0];
+        float y = event.values[1];
+        return !(
+                x > (-TILTING_THRESHOLD)
+                &&
+                x < (TILTING_THRESHOLD)
+                &&
+                y > (-TILTING_THRESHOLD)
+                &&
+                y < (TILTING_THRESHOLD));
     }
 
     private static final int    ORIENTATION_PORTRAIT = 0,
