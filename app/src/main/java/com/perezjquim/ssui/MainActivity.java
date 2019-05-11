@@ -1,19 +1,19 @@
 package com.perezjquim.ssui;
 
 import android.content.Intent;
-import android.content.res.*;
+import android.content.res.Configuration;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.*;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.widget.MediaController;
 import android.support.v7.widget.Toolbar;
+import android.view.*;
+import android.widget.MediaController;
 import android.widget.VideoView;
 import com.perezjquim.*;
+import android.util.*;
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener
 {
@@ -25,6 +25,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     protected void onCreate(Bundle savedInstanceState)
     {
         // inicialização
+        supportRequestWindowFeature(Window.FEATURE_NO_TITLE);//will hide the title
         super.onCreate(savedInstanceState);
         super.setTheme(R.style.AppTheme);
         setContentView(R.layout.activity_main);
@@ -33,7 +34,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         _sensorHandler.handle();
         mTopToolbar = (Toolbar) findViewById(R.id.my_toolbar);
         setSupportActionBar(mTopToolbar);
-        openIntent();        
+        openIntent();
     }
 
     @Override
@@ -74,12 +75,34 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     public boolean onOptionsItemSelected(MenuItem item) 
     {
         int id = item.getItemId();
-        if (id == R.id.action_folder) 
+        switch(id)
         {
-            openIntent();
-            return true;
+            case R.id.action_folder:
+                    openIntent();
+                    return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private boolean _isFullscreen = false;
+    public void toggleFullscreen(View v)
+    {
+        WindowManager.LayoutParams attrs = getWindow().getAttributes();
+
+        if(!_isFullscreen)
+        {
+            attrs.flags |= WindowManager.LayoutParams.FLAG_FULLSCREEN;
+            getSupportActionBar().hide(); //hide the title bar
+        }
+        else
+        {
+            attrs.flags &= ~WindowManager.LayoutParams.FLAG_FULLSCREEN;
+            getSupportActionBar().show();
+        }
+
+        _isFullscreen = !_isFullscreen;
+
+        getWindow().setAttributes(attrs);
     }
 
     @Override
