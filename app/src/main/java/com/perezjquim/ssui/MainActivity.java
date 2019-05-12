@@ -5,18 +5,25 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.*;
 import android.content.*;
 import android.support.v7.widget.Toolbar;
+import android.util.DisplayMetrics;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.WindowManager;
 import android.widget.MediaController;
 import android.widget.Toast;
 import android.widget.VideoView;
 
 import com.perezjquim.*;
 
+
 public class MainActivity extends AppCompatActivity
 {
     private static final int REQUEST_TAKE_GALLERY_VIDEO = 2;
     private Toolbar mTopToolbar;
+    private Uri selectedVideoUri;
+    private VideoView videoView;
+    private int isFullScreen;
+    private MediaController mediaController;
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
@@ -25,13 +32,12 @@ public class MainActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         super.setTheme(R.style.AppTheme);
         setContentView(R.layout.activity_main);
-        PermissionChecker.init(this);
+        //PermissionChecker.init(this);
         mTopToolbar = (Toolbar) findViewById(R.id.my_toolbar);
+        videoView= (VideoView) findViewById(R.id.vdVw);
         setSupportActionBar(mTopToolbar);
-
+        isFullScreen=0;
         openIntent();
-
-        //UIHelper.toast(this,"test");
     }
 
     public void openIntent(){
@@ -77,15 +83,32 @@ public class MainActivity extends AppCompatActivity
                 break;
 
             case REQUEST_TAKE_GALLERY_VIDEO:
-                Uri selectedVideoUri = data.getData();
-                VideoView videoView =(VideoView)findViewById(R.id.vdVw);
-                MediaController mediaController= new MediaController(this);
-                mediaController.setAnchorView(videoView);
-                videoView.setMediaController(mediaController);
-                videoView.setVideoURI(selectedVideoUri);
-                videoView.requestFocus();
-                videoView.start();
+                selectedVideoUri = data.getData();
+               startVideo(selectedVideoUri);
                 break;
+        }
+    }
+
+    public void startVideo(Uri uri){
+        mediaController= new FullScreenMediaController(this,0);
+        mediaController.setAnchorView(videoView);
+        videoView.setMediaController(mediaController);
+        videoView.setVideoURI(uri);
+        videoView.requestFocus();
+        videoView.start();
+    }
+
+    public void fullMinScreen(boolean full){
+        if(full){
+            getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                    WindowManager.LayoutParams.FLAG_FULLSCREEN);
+            getSupportActionBar().hide();
+            ((FullScreenMediaController) mediaController).setIsFullScreen(1);
+        }else{
+            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN);
+            getSupportActionBar().show();
+            ((FullScreenMediaController) mediaController).setIsFullScreen(0);
         }
     }
 }
