@@ -31,16 +31,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private Toolbar mTopToolbar;
     private Uri selectedVideoUri;
     private VideoView videoView;
-    private int isFullScreen;
-    private MediaController mediaController;
-    private boolean canPerformActions = false;
-    private boolean performedAction = false;     // METER A TRUE QUANDO EXECUTA UM GESTO PARA UMA AÇÃO, ASSIM NÃO CANCELA APÓS 5 SEGUNDOS
-    private VideoView video;
+    private boolean isFullScreen;
+    private FullScreenMediaController mediaController;
     private AudioManager audioManager;
+
+    private static final int VIDEO_SEEK_MS = 1000;
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
-        // inicialização
         supportRequestWindowFeature(Window.FEATURE_NO_TITLE);//will hide the title
         super.onCreate(savedInstanceState);
         super.setTheme(R.style.AppTheme);
@@ -49,7 +47,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         _sensorHandler = new SensorHandler(this);
         _sensorHandler.handle();
         mTopToolbar = (Toolbar) findViewById(R.id.my_toolbar);
+        videoView= (VideoView) findViewById(R.id.vdVw);
         setSupportActionBar(mTopToolbar);
+        isFullScreen=false;
+        audioManager = (AudioManager) this.getSystemService(this.AUDIO_SERVICE);
         openIntent();
     }
 
@@ -100,27 +101,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         return super.onOptionsItemSelected(item);
     }
 
-    private boolean _isFullscreen = false;
-    public void toggleFullscreen(View v)
-    {
-        WindowManager.LayoutParams attrs = getWindow().getAttributes();
-
-        if(!_isFullscreen)
-        {
-            attrs.flags |= WindowManager.LayoutParams.FLAG_FULLSCREEN;
-            getSupportActionBar().hide(); //hide the title bar
-        }
-        else
-        {
-            attrs.flags &= ~WindowManager.LayoutParams.FLAG_FULLSCREEN;
-            getSupportActionBar().show();
-        }
-
-        _isFullscreen = !_isFullscreen;
-
-        getWindow().setAttributes(attrs);
-    }
-
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data)
     {
@@ -134,15 +114,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
             case REQUEST_TAKE_GALLERY_VIDEO:
                 Uri selectedVideoUri = data.getData();
-                VideoView videoView =(VideoView)findViewById(R.id.vdVw);
-                MediaController mediaController= new MediaController(this);
-                mediaController.setAnchorView(videoView);
-                videoView.setMediaController(mediaController);
-                videoView.setVideoURI(selectedVideoUri);
-                videoView.requestFocus();
-                videoView.start();
-                audioManager = (AudioManager) this.getSystemService(this.AUDIO_SERVICE);
-                video = videoView;
+                startVideo(selectedVideoUri);
                 break;
         }
     }
@@ -153,120 +125,63 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     @Override
     public void onSensorChanged(SensorEvent event)
     {
-      int type = event.sensor.getType();
-      switch(type)
-      {
-          case Sensor.TYPE_PROXIMITY:
-              if(event.values[0] <= 4){
-                  toggleActions();
-                  Log.d("teste","açoes on");
-              }
-              break;
-
-          default:// outros sensores sem ser o de proximidade
-              if(canPerformActions){
-                  _sensorHandler.onSensorChanged(event);
-                  Log.d("teste","outro sensor");
-              }
-              break;
-      }
+        _sensorHandler.onSensorChanged(event);
     }
 
-    // proximity sensor triggered
-    public void toggleActions(){
-        if(!canPerformActions){
-            canPerformActions = true;
-            Log.d("teste","açoes on");
-            new Timer().schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    if(!performedAction){
-                        canPerformActions = false;
-                        Log.d("teste","açoes off");
-                    }
-                }
-            }, 5000);
+    public void vidSomMenos()
+    {
+            int vol = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC) - 2;
+            if (vol < 0)
+            {
+                vol = 0;
+            }
+            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, vol, 0);
+            System.out.println("@@ menos som @@");
+    }
+
+    public void vidSomMais(){
+            int max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+            int vol = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC) + 2;
+            if (vol > max)
+            {
+                vol = max;
+            }
+            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, vol, 0);
+        System.out.println("@@ mais som @@");
+    }
+
+    public void vidRebobinar()
+    {
+            videoView.seekTo(videoView.getCurrentPosition() - VIDEO_SEEK_MS);
+            System.out.println("@@ rebobinar @@");
+    }
+
+    public void vidAvancar()
+    {
+            videoView.seekTo(videoView.getCurrentPosition() + VIDEO_SEEK_MS);
+            System.out.println("@@ avançar @@");
+    }
+
+    public void fullMinScreen(boolean full){
+        if(full){
+            getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                    WindowManager.LayoutParams.FLAG_FULLSCREEN);
+            getSupportActionBar().hide();
+            mediaController.setIsFullScreen(true);
+        }else{
+            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN);
+            getSupportActionBar().show();
+            mediaController.setIsFullScreen(false);
         }
     }
 
-    public boolean CanPerformActions(){
-        return canPerformActions;
+    public void startVideo(Uri uri){
+        mediaController= new FullScreenMediaController(this,false);
+        mediaController.setAnchorView(videoView);
+        videoView.setMediaController(mediaController);
+        videoView.setVideoURI(uri);
+        videoView.requestFocus();
+        videoView.start();
     }
-
-    // After executing a gesture
-    public void performedAction(){
-        performedAction = true;
-        canPerformActions = false;
-    }
-
-    public void vidSomMenos(View view){
-        performedAction();
-        int vol = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC) - 2;
-        if (vol < 0) {
-            vol = 0;
-        }
-        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, vol, 0);
-
-    }
-
-    public void vidSomMais(View view){
-        performedAction();
-        int max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-        int vol = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)+2;
-        if(vol > max){
-            vol = max;
-        }
-        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, vol, 0);
-    }
-
-    public void vidRebobinar(View view){
-        performedAction();
-        video.seekTo(video.getCurrentPosition()-1000);
-    }
-
-    public void vidAvancar(View view){
-        performedAction();
-        video.seekTo(video.getCurrentPosition()+1000);
-    }
-
-    public boolean CanPerformActions(){
-        return canPerformActions;
-    }
-
-    // After executing a gesture
-    public void performedAction(){
-        performedAction = true;
-        canPerformActions = false;
-    }
-
-    public void vidSomMenos(View view){
-        performedAction();
-        int vol = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC) - 2;
-        if (vol < 0) {
-            vol = 0;
-        }
-        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, vol, 0);
-
-    }
-
-    public void vidSomMais(View view){
-        performedAction();
-        int max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-        int vol = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)+2;
-        if(vol > max){
-            vol = max;
-        }
-        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, vol, 0);
-    }
-
-    public void vidRebobinar(View view){
-        performedAction();
-        video.seekTo(video.getCurrentPosition()-1000);
-    }
-
-    public void vidAvancar(View view){
-        performedAction();
-        video.seekTo(video.getCurrentPosition()+1000);
-    }
-
 }

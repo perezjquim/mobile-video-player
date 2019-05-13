@@ -11,11 +11,14 @@ import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.MediaController;
 
-public class FullScreenMediaController extends MediaController {
+public class FullScreenMediaController extends MediaController
+{
     private ImageButton fullScreen;
     private MainActivity context;
-    private int isFullScreen;
-    public FullScreenMediaController(MainActivity context,int isFullScreen) {
+    private boolean isFullScreen;
+
+    public FullScreenMediaController(MainActivity context, boolean isFullScreen)
+    {
         super(context);
         this.context=context;
         this.isFullScreen=isFullScreen;
@@ -43,10 +46,10 @@ public class FullScreenMediaController extends MediaController {
             @Override
             public void onClick(View v) {
 
-                if(isFullScreen == 0){
+                if(isFullScreen){
                     fullScreen.setImageResource(R.drawable.ic_fullscreen_exit);
                     context.fullMinScreen(true);
-                }else if(isFullScreen == 1){
+                }else {
                     fullScreen.setImageResource(R.drawable.ic_fullscreen);
                     context.fullMinScreen(false);
                 }
@@ -54,7 +57,7 @@ public class FullScreenMediaController extends MediaController {
         });
     }
 
-    public void setIsFullScreen(int isFullScreen)
+    public void setIsFullScreen(boolean isFullScreen)
     {
         this.isFullScreen=isFullScreen;
     }
