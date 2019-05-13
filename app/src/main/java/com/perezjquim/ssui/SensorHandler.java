@@ -28,6 +28,7 @@ public class SensorHandler
     {
         _sensorManager = (SensorManager) _act.getSystemService(Context.SENSOR_SERVICE);
         _sensors.put("accelerometer", _sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER));
+_sensors.put("proximity", _sensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY));
     }
 
     public void onPause()
@@ -182,22 +183,31 @@ public class SensorHandler
         }
     }
 
-    private void _handleTiltUp()
-    {
-        System.out.println(">> up");
-    }
-    private void _handleTiltDown()
-    {
-        System.out.println(">> down");
-    }
-    private void _handleTiltLeft()
-    {
-        System.out.println(">> left");
-    }
-    private void _handleTiltRight()
-    {
-        System.out.println(">> right");
-    }
+
+        private void _handleTiltUp()
+        {
+            System.out.println(">> up");
+            _act.performedAction();
+            _act.vidRebobinar(null);
+        }
+        private void _handleTiltDown()
+        {
+            System.out.println(">> down");
+            _act.performedAction();
+            _act.vidAvancar(null);
+        }
+        private void _handleTiltLeft()
+        {
+            System.out.println(">> left");
+            _act.performedAction();
+            _act.vidSomMenos(null);
+        }
+        private void _handleTiltRight()
+        {
+            System.out.println(">> right");
+            _act.performedAction();
+            _act.vidSomMais(null);
+        }
 
     private static final int TILTING_THRESHOLD = 2;
     private boolean _isTilting(SensorEvent event)
