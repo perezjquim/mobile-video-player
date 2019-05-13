@@ -36,6 +36,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private AudioManager audioManager;
 
     private static final int VIDEO_SEEK_MS = 1000;
+    private static final int VOLUME_CHANGE = 2;
+
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
@@ -72,13 +74,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     {
         super.onPause();
         _sensorHandler.onPause();
-    }
-
-    public void openIntent(){
-        Intent intent = new Intent();
-        intent.setType("video/*");
-        intent.setAction(Intent.ACTION_GET_CONTENT);
-        startActivityForResult(Intent.createChooser(intent,"Select Video"),REQUEST_TAKE_GALLERY_VIDEO);
     }
 
     @Override
@@ -128,26 +123,48 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         _sensorHandler.onSensorChanged(event);
     }
 
+    public void openIntent(){
+        Intent intent = new Intent();
+        intent.setType("video/*");
+        intent.setAction(Intent.ACTION_GET_CONTENT);
+        startActivityForResult(Intent.createChooser(intent,"Select Video"),REQUEST_TAKE_GALLERY_VIDEO);
+    }
+
     public void vidSomMenos()
     {
-            int vol = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC) - 2;
+            int vol = _getVolume() - VOLUME_CHANGE;
             if (vol < 0)
             {
                 vol = 0;
             }
-            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, vol, 0);
+            _setVolume(vol);
             System.out.println("@@ menos som @@");
     }
 
     public void vidSomMais(){
-            int max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-            int vol = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC) + 2;
+            int max = _getMaxVolume();
+            int vol = _getVolume() + VOLUME_CHANGE;
             if (vol > max)
             {
                 vol = max;
             }
-            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, vol, 0);
+            _setVolume(vol);
         System.out.println("@@ mais som @@");
+    }
+
+    private int _getMaxVolume()
+    {
+        return audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+    }
+
+    private int _getVolume()
+    {
+        return audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+    }
+
+    private void _setVolume(int vol)
+    {
+        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, vol, 0);
     }
 
     public void vidRebobinar()
@@ -163,15 +180,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
     public void fullMinScreen(boolean full){
+        Window w = this.getWindow();
+        ActionBar b = this.getSupportActionBar();
         if(full){
-            getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+            w.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                     WindowManager.LayoutParams.FLAG_FULLSCREEN);
-            getSupportActionBar().hide();
+            b.hide();
             mediaController.setIsFullScreen(true);
         }else{
-            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
-            getWindow().addFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN);
-            getSupportActionBar().show();
+            w.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+            w.addFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN);
+            b.show();
             mediaController.setIsFullScreen(false);
         }
     }

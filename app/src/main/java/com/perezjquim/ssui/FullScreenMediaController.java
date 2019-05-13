@@ -16,6 +16,7 @@ public class FullScreenMediaController extends MediaController
     private ImageButton fullScreen;
     private MainActivity context;
     private boolean isFullScreen;
+    private static final int FULLSCREEN_BUTTON_RIGHT_MARGIN = 80;
 
     public FullScreenMediaController(MainActivity context, boolean isFullScreen)
     {
@@ -36,7 +37,7 @@ public class FullScreenMediaController extends MediaController
                 new FrameLayout.LayoutParams(LayoutParams.WRAP_CONTENT,
                         LayoutParams.WRAP_CONTENT);
         params.gravity = Gravity.RIGHT;
-        params.rightMargin = 80;
+        params.rightMargin = FULLSCREEN_BUTTON_RIGHT_MARGIN;
         addView(fullScreen, params);
 
         fullScreen.setImageResource(R.drawable.ic_fullscreen);
