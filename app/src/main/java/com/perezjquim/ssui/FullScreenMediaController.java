@@ -47,7 +47,7 @@ public class FullScreenMediaController extends MediaController
             @Override
             public void onClick(View v) {
 
-                if(isFullScreen){
+                if(!isFullScreen){
                     fullScreen.setImageResource(R.drawable.ic_fullscreen_exit);
                     context.fullMinScreen(true);
                 }else {
