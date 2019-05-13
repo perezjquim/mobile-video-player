@@ -5,6 +5,8 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorManager;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
+
 import com.perezjquim.ssui.*;
 
 import java.util.HashMap;
@@ -18,6 +20,7 @@ public class SensorHandler
     private static final int DOWN_THRESHOLD = 8;
     private static final int UP_THRESHOLD = 2;
 
+
     public SensorHandler(MainActivity act)
     {
         _act = act;
@@ -28,7 +31,7 @@ public class SensorHandler
     {
         _sensorManager = (SensorManager) _act.getSystemService(Context.SENSOR_SERVICE);
         _sensors.put("accelerometer", _sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER));
-_sensors.put("proximity", _sensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY));
+        _sensors.put("proximity", _sensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY));
     }
 
     public void onPause()
