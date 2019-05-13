@@ -186,30 +186,31 @@ public class SensorHandler
         }
     }
 
-    private void _handleTiltUp()
-    {
-        System.out.println(">> up");
-        _act.performedAction();
-        _act.vidRebobinar(null);
-    }
-    private void _handleTiltDown()
-    {
-        System.out.println(">> down");
-        _act.performedAction();
-        _act.vidAvancar(null);
-    }
-    private void _handleTiltLeft()
-    {
-        System.out.println(">> left");
-        _act.performedAction();
-        _act.vidSomMenos(null);
-    }
-    private void _handleTiltRight()
-    {
-        System.out.println(">> right");
-        _act.performedAction();
-        _act.vidSomMais(null);
-    }
+
+        private void _handleTiltUp()
+        {
+            System.out.println(">> up");
+            _act.performedAction();
+            _act.vidRebobinar(null);
+        }
+        private void _handleTiltDown()
+        {
+            System.out.println(">> down");
+            _act.performedAction();
+            _act.vidAvancar(null);
+        }
+        private void _handleTiltLeft()
+        {
+            System.out.println(">> left");
+            _act.performedAction();
+            _act.vidSomMenos(null);
+        }
+        private void _handleTiltRight()
+        {
+            System.out.println(">> right");
+            _act.performedAction();
+            _act.vidSomMais(null);
+        }
 
     private static final int TILTING_THRESHOLD = 2;
     private boolean _isTilting(SensorEvent event)

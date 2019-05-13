@@ -26,11 +26,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private SensorHandler _sensorHandler;
     private static final int REQUEST_TAKE_GALLERY_VIDEO = 2;
     private Toolbar mTopToolbar;
+    private Uri selectedVideoUri;
+    private VideoView videoView;
+    private int isFullScreen;
+    private MediaController mediaController;
     private boolean canPerformActions = false;
     private boolean performedAction = false;     // METER A TRUE QUANDO EXECUTA UM GESTO PARA UMA AÇÃO, ASSIM NÃO CANCELA APÓS 5 SEGUNDOS
     private VideoView video;
     private AudioManager audioManager;
-
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
@@ -76,17 +79,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) 
+    public boolean onCreateOptionsMenu(Menu menu)
     {
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
 
     @Override
-    public boolean onOptionsItemSelected(MenuItem item) 
+    public boolean onOptionsItemSelected(MenuItem item)
     {
         int id = item.getItemId();
-        if (id == R.id.action_folder) 
+        if (id == R.id.action_folder)
         {
             openIntent();
             return true;
@@ -126,24 +129,23 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     @Override
     public void onSensorChanged(SensorEvent event)
     {
-        int type = event.sensor.getType();
-        switch(type)
-        {
-            case Sensor.TYPE_PROXIMITY:
-                if(event.values[0] <= 4){
-                    toggleActions();
-                    Log.d("teste","açoes on");
-                }
-                break;
+      int type = event.sensor.getType();
+      switch(type)
+      {
+          case Sensor.TYPE_PROXIMITY:
+              if(event.values[0] <= 4){
+                  toggleActions();
+                  Log.d("teste","açoes on");
+              }
+              break;
 
-            default:// outros sensores sem ser o de proximidade
-                if(canPerformActions){
-                    _sensorHandler.onSensorChanged(event);
-                    Log.d("teste","outro sensor");
-                }
-                break;
-        }
-
+          default:// outros sensores sem ser o de proximidade
+              if(canPerformActions){
+                  _sensorHandler.onSensorChanged(event);
+                  Log.d("teste","outro sensor");
+              }
+              break;
+      }
     }
 
     // proximity sensor triggered
@@ -161,6 +163,46 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 }
             }, 5000);
         }
+    }
+
+    public boolean CanPerformActions(){
+        return canPerformActions;
+    }
+
+    // After executing a gesture
+    public void performedAction(){
+        performedAction = true;
+        canPerformActions = false;
+    }
+
+    public void vidSomMenos(View view){
+        performedAction();
+        int vol = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC) - 2;
+        if (vol < 0) {
+            vol = 0;
+        }
+        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, vol, 0);
+
+    }
+
+    public void vidSomMais(View view){
+        performedAction();
+        int max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+        int vol = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)+2;
+        if(vol > max){
+            vol = max;
+        }
+        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, vol, 0);
+    }
+
+    public void vidRebobinar(View view){
+        performedAction();
+        video.seekTo(video.getCurrentPosition()-1000);
+    }
+
+    public void vidAvancar(View view){
+        performedAction();
+        video.seekTo(video.getCurrentPosition()+1000);
     }
 
     public boolean CanPerformActions(){
