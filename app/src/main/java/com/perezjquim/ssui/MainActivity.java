@@ -6,6 +6,7 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.media.AudioManager;
+import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.*;
@@ -13,6 +14,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.webkit.URLUtil;
 import android.widget.MediaController;
 import android.support.v7.widget.Toolbar;
 import android.view.*;
@@ -23,6 +25,9 @@ import android.util.*;
 
 import java.util.Timer;
 import java.util.TimerTask;
+
+import static com.perezjquim.UIHelper.askString;
+import static com.perezjquim.UIHelper.toast;
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener
 {
@@ -53,7 +58,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         setSupportActionBar(mTopToolbar);
         isFullScreen=false;
         audioManager = (AudioManager) this.getSystemService(this.AUDIO_SERVICE);
-        openIntent();
+        //openIntent();
     }
 
     @Override
@@ -92,10 +97,27 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             case R.id.action_folder:
                     openIntent();
                     return true;
+
+            case R.id.paste_url:
+                openVideoFromUrl();
+                return true;
         }
         return super.onOptionsItemSelected(item);
     }
 
+    public void openVideoFromUrl()
+    {
+        askString(this,"Introduza o URL do vídeo:","",(url)->
+        {
+            String urlString = url.toString();
+            //
+             if (URLUtil.isValidUrl(urlString)) {
+                Uri uri = Uri.parse(urlString);
+                startVideo(uri);
+            }
+            //toast(this,"Inserted phrase:"+url);
+        });
+    }
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data)
     {
@@ -201,6 +223,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         videoView.setMediaController(mediaController);
         videoView.setVideoURI(uri);
         videoView.requestFocus();
-        videoView.start();
+        videoView.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+            // Close the progress bar and play the video
+            public void onPrepared(MediaPlayer mp) {
+                toast(MainActivity.this,"ABCD");
+                videoView.start();
+            }
+        });
+        //videoView.start();
     }
 }
