@@ -10,6 +10,8 @@ import android.util.Log;
 import com.perezjquim.ssui.*;
 
 import java.util.HashMap;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class SensorHandler
 {
@@ -20,6 +22,11 @@ public class SensorHandler
     private static final int DOWN_THRESHOLD = 8;
     private static final int UP_THRESHOLD = 2;
 
+    private boolean canPerformActions = false;
+    private boolean performedAction = false;     // MET
+
+    private static final int ACTION_THRESHOLD_MS = 5000;
+    private static final int PROXIMITY_THRESHOLD = 4;
 
     public SensorHandler(MainActivity act)
     {
@@ -52,6 +59,17 @@ public class SensorHandler
             case Sensor.TYPE_ACCELEROMETER:
                 _handleAccelerometer(event);
                 break;
+            case Sensor.TYPE_PROXIMITY:
+                _handleProximity(event);
+                break;
+        }
+    }
+
+    private void _handleProximity(SensorEvent event)
+    {
+        if(event.values[0] <= PROXIMITY_THRESHOLD)
+        {
+            _toggleActions();
         }
     }
 
@@ -61,35 +79,28 @@ public class SensorHandler
         float x = event.values[0];
         float y = event.values[1];
         float z = event.values[2];
-//        System.out.println("===");
-//        System.out.println("x: "+x);
-//        System.out.println("y:" +y);
-//        System.out.println("z: "+z);
 
-        switch(orientation)
+        switch (orientation)
         {
             // PORTRAIT
             case OrientationHandler.ORIENTATION_PORTRAIT:
-                if(_isTilting(event))
+                if (_isTilting(event))
                 {
                     if (Math.abs(x) > Math.abs(y))
                     {
                         if (x < 0)
                         {
                             _handleTiltRight();
-                        }
-                        else if (x > 0)
+                        } else if (x > 0)
                         {
                             _handleTiltLeft();
                         }
-                    }
-                    else
+                    } else
                     {
                         if (y < UP_THRESHOLD)
                         {
                             _handleTiltUp();
-                        }
-                        else if (y > DOWN_THRESHOLD)
+                        } else if (y > DOWN_THRESHOLD)
                         {
                             _handleTiltDown();
                         }
@@ -99,26 +110,23 @@ public class SensorHandler
 
             // PORTRAIT (INVERSO)
             case OrientationHandler.ORIENTATION_PORTRAIT_REVERSE:
-                if(_isTilting(event))
+                if (_isTilting(event))
                 {
                     if (Math.abs(x) > Math.abs(y))
                     {
                         if (x < 0)
                         {
                             _handleTiltLeft();
-                        }
-                        else if (x > 0)
+                        } else if (x > 0)
                         {
                             _handleTiltRight();
                         }
-                    }
-                    else
+                    } else
                     {
                         if (y < -DOWN_THRESHOLD)
                         {
                             _handleTiltDown();
-                        }
-                        else if (y > UP_THRESHOLD)
+                        } else if (y > UP_THRESHOLD)
                         {
                             _handleTiltUp();
                         }
@@ -128,26 +136,23 @@ public class SensorHandler
 
             // LANDSCAPE
             case OrientationHandler.ORIENTATION_LANDSCAPE:
-                if(_isTilting(event))
+                if (_isTilting(event))
                 {
                     if (Math.abs(x) > Math.abs(y))
                     {
                         if (x < UP_THRESHOLD)
                         {
                             _handleTiltUp();
-                        }
-                        else if (x > DOWN_THRESHOLD)
+                        } else if (x > DOWN_THRESHOLD)
                         {
                             _handleTiltDown();
                         }
-                    }
-                    else
+                    } else
                     {
                         if (y < 0)
                         {
                             _handleTiltLeft();
-                        }
-                        else if (y > 0)
+                        } else if (y > 0)
                         {
                             _handleTiltRight();
                         }
@@ -157,26 +162,23 @@ public class SensorHandler
 
             // LANDSCAPE (INVERSO)
             case OrientationHandler.ORIENTATION_LANDSCAPE_REVERSE:
-                if(_isTilting(event))
+                if (_isTilting(event))
                 {
                     if (Math.abs(x) > Math.abs(y))
                     {
                         if (x < -DOWN_THRESHOLD)
                         {
                             _handleTiltDown();
-                        }
-                        else if (x > UP_THRESHOLD)
+                        } else if (x > UP_THRESHOLD)
                         {
                             _handleTiltUp();
                         }
-                    }
-                    else
+                    } else
                     {
                         if (y < 0)
                         {
                             _handleTiltRight();
-                        }
-                        else if (y > 0)
+                        } else if (y > 0)
                         {
                             _handleTiltLeft();
                         }
@@ -190,26 +192,41 @@ public class SensorHandler
         private void _handleTiltUp()
         {
             System.out.println(">> up");
-            _act.performedAction();
-            _act.vidRebobinar(null);
+            if(canPerformActions)
+            {
+                performedAction();
+                _act.vidSomMais();
+            }
         }
+
         private void _handleTiltDown()
         {
             System.out.println(">> down");
-            _act.performedAction();
-            _act.vidAvancar(null);
+            if(canPerformActions)
+            {
+                performedAction();
+                _act.vidSomMenos();
+            }
         }
+
         private void _handleTiltLeft()
         {
             System.out.println(">> left");
-            _act.performedAction();
-            _act.vidSomMenos(null);
+            if(canPerformActions)
+            {
+                performedAction();
+                _act.vidRebobinar();
+            }
         }
+
         private void _handleTiltRight()
         {
             System.out.println(">> right");
-            _act.performedAction();
-            _act.vidSomMais(null);
+            if(canPerformActions)
+            {
+                performedAction();
+                _act.vidAvancar();
+            }
         }
 
     private static final int TILTING_THRESHOLD = 2;
@@ -225,5 +242,33 @@ public class SensorHandler
                         y > (-TILTING_THRESHOLD)
                         &&
                         y < (TILTING_THRESHOLD));
+    }
+
+    public void performedAction()
+    {
+        performedAction = true;
+        canPerformActions = false;
+    }
+
+    // proximity sensor triggered
+    public void _toggleActions()
+    {
+        if(!canPerformActions)
+        {
+            canPerformActions = true;
+            System.out.println(":: açoes on ::");
+            new Timer().schedule(new TimerTask()
+            {
+                @Override
+                public void run()
+                {
+                    if (!performedAction)
+                    {
+                        canPerformActions = false;
+                        System.out.println(":: açoes off ::");
+                    }
+                }
+            }, ACTION_THRESHOLD_MS);
+        }
     }
 }
