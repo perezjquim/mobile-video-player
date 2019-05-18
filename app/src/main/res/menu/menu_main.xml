@@ -7,4 +7,10 @@
         android:title="User"
         android:icon="@drawable/folder"
         app:showAsAction="ifRoom"></item>
+    <item
+        android:id="@+id/paste_url"
+        android:orderInCategory="300"
+        android:title="User"
+        android:icon="@drawable/paste_url"
+        app:showAsAction="ifRoom"></item>
 </menu>
