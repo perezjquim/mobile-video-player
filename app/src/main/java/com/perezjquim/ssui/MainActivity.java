@@ -1,46 +1,39 @@
 package com.perezjquim.ssui;
 
-import android.content.Intent;
-import android.content.res.Configuration;
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
-import android.media.AudioManager;
-import android.media.MediaPlayer;
-import android.net.Uri;
+import android.content.*;
+import android.content.res.*;
+import android.hardware.*;
+import android.media.*;
+import android.net.*;
 import android.os.*;
 import android.support.v7.app.*;
-import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.View;
-import android.webkit.URLUtil;
-import android.widget.MediaController;
+import android.util.*;
+import android.view.*;
+import android.webkit.*;
 import android.support.v7.widget.Toolbar;
 import android.view.*;
 import android.widget.MediaController;
 import android.widget.VideoView;
 import com.perezjquim.*;
 import android.util.*;
+import android.database.*;
+import android.provider.*;
+import java.util.*;
+import java.net.*;
+import org.json.*;
+import static com.perezjquim.UIHelper.*;
+import static com.perezjquim.SharedPreferencesHelper.*;
 
-import java.util.Timer;
-import java.util.TimerTask;
-
-import static com.perezjquim.UIHelper.askString;
-import static com.perezjquim.UIHelper.toast;
-import static com.perezjquim.UIHelper.openProgressDialog;
-import static com.perezjquim.UIHelper.closeProgressDialog;
-
-public class MainActivity extends AppCompatActivity implements SensorEventListener
+public class MainActivity extends GenericActivity implements SensorEventListener
 {
     private SensorHandler _sensorHandler;
-    private static final int REQUEST_TAKE_GALLERY_VIDEO = 2;
     private Toolbar mTopToolbar;
     private Uri selectedVideoUri;
     private VideoView videoView;
     private boolean isFullScreen;
     private FullScreenMediaController mediaController;
     private AudioManager audioManager;
+    private SharedPreferencesHelper _prefs;
 
     private static final int VIDEO_SEEK_MS = 5000;
     private static final int VOLUME_CHANGE = 4;
@@ -50,9 +43,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     {
         supportRequestWindowFeature(Window.FEATURE_NO_TITLE);//will hide the title
         super.onCreate(savedInstanceState);
-        super.setTheme(R.style.AppTheme);
         setContentView(R.layout.activity_main);
-        PermissionChecker.init(this);
         _sensorHandler = new SensorHandler(this);
         _sensorHandler.handle();
         mTopToolbar = (Toolbar) findViewById(R.id.my_toolbar);
@@ -60,6 +51,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         setSupportActionBar(mTopToolbar);
         isFullScreen=false;
         audioManager = (AudioManager) this.getSystemService(this.AUDIO_SERVICE);
+        _prefs = new SharedPreferencesHelper(this);
+        _handleIntent();
         //openIntent();
     }
 
@@ -101,36 +94,19 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     return true;
 
             case R.id.paste_url:
-                openVideoFromUrl();
+                openVideoFromUrl(false);
                 return true;
         }
         return super.onOptionsItemSelected(item);
     }
 
-    public void openVideoFromUrl()
-    {
-        askString(this,"Introduza o URL do vídeo:","",(url)->
-        {
-            String urlString = url.toString();
-            //
-             if (URLUtil.isValidUrl(urlString)) {
-                Uri uri = Uri.parse(urlString);
-                startVideo(uri);
-            }
-            //toast(this,"Inserted phrase:"+url);
-        });
-    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data)
     {
         super.onActivityResult(requestCode, resultCode, data);
         switch(requestCode)
         {
-            // tratamento das permissões
-            case PermissionChecker.REQUEST_CODE:
-                PermissionChecker.restart();
-                break;
-
             case REQUEST_TAKE_GALLERY_VIDEO:
                 Uri selectedVideoUri = data.getData();
                 startVideo(selectedVideoUri);
@@ -145,13 +121,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     public void onSensorChanged(SensorEvent event)
     {
         _sensorHandler.onSensorChanged(event);
-    }
-
-    public void openIntent(){
-        Intent intent = new Intent();
-        intent.setType("video/*");
-        intent.setAction(Intent.ACTION_GET_CONTENT);
-        startActivityForResult(Intent.createChooser(intent,"Select Video"),REQUEST_TAKE_GALLERY_VIDEO);
     }
 
     public void vidSomMenos()
@@ -226,6 +195,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     public void startVideo(Uri uri){
         openProgressDialog(this, "Carregando...");
+        _saveHistory(uri);
         mediaController= new FullScreenMediaController(this,false);
         mediaController.setAnchorView(videoView);
         videoView.setMediaController(mediaController);
@@ -253,6 +223,68 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         else
         {
             vibrator.vibrate(VIBRATION_TIME);
+        }
+    }
+
+    private static final String CONFIG_PREFS_KEY = "config";
+    private static final String HISTORY_PREFS_KEY = "history";
+    private void _saveHistory(Uri uri)
+    {
+        String sData = _prefs.getString(CONFIG_PREFS_KEY,HISTORY_PREFS_KEY);
+
+        String name = _getFileName(uri);
+        String path = uri.toString();
+        JSONObject oData = new JSONObject();
+        JSONArray aData = new JSONArray();
+        try
+        {
+            oData.put("name", name);
+            oData.put("path", path);
+            if(sData != null)
+            {
+                aData = new JSONArray(sData);
+                if(aData.length() > 3)
+                {
+                    int limit = aData.length() - 3;
+                    for(int i = 0; i < limit ; i++)
+                        aData.remove(0);
+                }
+            }
+            aData.put(oData);
+        }
+        catch(JSONException e)
+        {
+            e.printStackTrace();
+        }
+
+        String sResult = aData.toString();
+        _prefs.setString(CONFIG_PREFS_KEY,HISTORY_PREFS_KEY,sResult);
+    }
+
+    private String _getFileName(Uri uri)
+    {
+            Cursor c = getContentResolver().query(uri, null, null, null, null);
+            if(c != null)
+            {
+                int index = c.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+                c.moveToFirst();
+                String name = c.getString(index);
+                c.close();
+                return name;
+            }
+            else
+            {
+                return uri.toString();
+            }
+    }
+
+    private void _handleIntent()
+    {
+        Intent i = getIntent();
+        String u = i.getStringExtra("uri");
+        if(u != null)
+        {
+            startVideo(Uri.parse(u));
         }
     }
 }
