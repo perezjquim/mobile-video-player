@@ -21,8 +21,10 @@ import android.provider.*;
 import java.util.*;
 import java.net.*;
 import org.json.*;
+import java.io.*;
 import static com.perezjquim.UIHelper.*;
 import static com.perezjquim.SharedPreferencesHelper.*;
+import android.provider.*;
 
 public class MainActivity extends GenericActivity implements SensorEventListener
 {
@@ -53,7 +55,6 @@ public class MainActivity extends GenericActivity implements SensorEventListener
         audioManager = (AudioManager) this.getSystemService(this.AUDIO_SERVICE);
         _prefs = new SharedPreferencesHelper(this);
         _handleIntent();
-        //openIntent();
     }
 
     @Override
@@ -194,7 +195,7 @@ public class MainActivity extends GenericActivity implements SensorEventListener
     }
 
     public void startVideo(Uri uri){
-        openProgressDialog(this, "Carregando...");
+        openProgressDialog(this, "Loading...");
         _saveHistory(uri);
         mediaController= new FullScreenMediaController(this,false);
         mediaController.setAnchorView(videoView);
@@ -202,14 +203,17 @@ public class MainActivity extends GenericActivity implements SensorEventListener
         videoView.setVideoURI(uri);
         videoView.requestFocus();
         MainActivity me = this;
+        videoView.setOnErrorListener((a,b,c)->
+        {
+            closeProgressDialog(me);
+            return false;
+        });
         videoView.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
             public void onPrepared(MediaPlayer mp) {
-//                toast(MainActivity.this,"ABCD");
                 closeProgressDialog(me);
                 videoView.start();
             }
         });
-        //videoView.start();
     }
 
     private static final int VIBRATION_TIME = 200;
@@ -226,14 +230,32 @@ public class MainActivity extends GenericActivity implements SensorEventListener
         }
     }
 
-    private static final String CONFIG_PREFS_KEY = "config";
-    private static final String HISTORY_PREFS_KEY = "history";
+
+    private static final int MAX_LIST_ITEMS = 3;
     private void _saveHistory(Uri uri)
     {
         String sData = _prefs.getString(CONFIG_PREFS_KEY,HISTORY_PREFS_KEY);
 
         String name = _getFileName(uri);
-        String path = uri.toString();
+
+        String scheme = uri.getScheme();
+        String path = "";
+        switch(scheme)
+        {
+            case ContentResolver.SCHEME_CONTENT:
+                path = _getFilePath(uri);
+                break;
+
+            case "http":
+            case "https":
+                path = uri.toString();
+                break;
+
+            case "file":
+                path = uri.getPath();
+                break;
+        }
+
         JSONObject oData = new JSONObject();
         JSONArray aData = new JSONArray();
         try
@@ -243,14 +265,24 @@ public class MainActivity extends GenericActivity implements SensorEventListener
             if(sData != null)
             {
                 aData = new JSONArray(sData);
-                if(aData.length() > 3)
+                int length = aData.length();
+                JSONObject last = aData.getJSONObject(length-1);
+                String lastPath = last.getString("path");
+                if(!path.equals(lastPath))
                 {
-                    int limit = aData.length() - 3;
+                    aData.put(oData);
+                }
+                if(length >= MAX_LIST_ITEMS)
+                {
+                    int limit = aData.length() - MAX_LIST_ITEMS;
                     for(int i = 0; i < limit ; i++)
                         aData.remove(0);
                 }
             }
-            aData.put(oData);
+            else
+            {
+                aData.put(oData);
+            }
         }
         catch(JSONException e)
         {
@@ -281,10 +313,38 @@ public class MainActivity extends GenericActivity implements SensorEventListener
     private void _handleIntent()
     {
         Intent i = getIntent();
+
+        String p = i.getStringExtra("path");
+        if(p != null)
+        {
+            Uri u = Uri.fromFile(new File(p));
+            startVideo(u);
+            return;
+        }
+
         String u = i.getStringExtra("uri");
         if(u != null)
         {
-            startVideo(Uri.parse(u));
+            Uri uri = Uri.parse(u);
+            startVideo(uri);
         }
+    }
+
+    private String _getFilePath(Uri uri)
+    {
+        Cursor cursor = getContentResolver().query(uri, null, null, null, null);
+        cursor.moveToFirst();
+        String document_id = cursor.getString(0);
+        document_id = document_id.substring(document_id.lastIndexOf(":")+1);
+        cursor.close();
+
+        cursor = getContentResolver().query(
+                MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+                null, MediaStore.Video.Media._ID + " = ? ", new String[]{document_id}, null);
+        cursor.moveToFirst();
+        String path = cursor.getString(cursor.getColumnIndex(MediaStore.Video.Media.DATA));
+        cursor.close();
+
+        return path;
     }
 }

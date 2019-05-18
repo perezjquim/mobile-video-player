@@ -9,13 +9,22 @@
     android:orientation="vertical"
     tools:context=".WelcomeActivity">
 
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:src="@mipmap/ic_launcher"/>
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="30dp" />
+
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/btnOpenLocal"
         android:drawableLeft="@drawable/folder"
         android:onClick="onOpenLocalFile"
-        android:text="Open local video"/>
+        android:text="@string/open_file"/>
 
     <Button
         android:layout_width="wrap_content"
@@ -23,6 +32,19 @@
         android:id="@+id/btnOpenURL"
         android:drawableLeft="@drawable/paste_url"
         android:onClick="onOpenURL"
-        android:text="Open video via URL"/>
+        android:text="@string/open_url"/>
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="15dp" />
+
+    <ListView
+        android:id="@+id/list"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="30dp"
+        android:layout_marginRight="30dp"
+        android:layout_gravity="center"
+        android:foregroundGravity="center"/>
 
 </LinearLayout>

@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Mobile Video Player</string>
+    <string name="open_url">Open video via URL</string>
+    <string name="open_file">Open local file</string>
 </resources>

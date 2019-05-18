@@ -12,6 +12,8 @@ import static com.perezjquim.SharedPreferencesHelper.*;
 public class GenericActivity extends AppCompatActivity
 {
     protected static final int REQUEST_TAKE_GALLERY_VIDEO = 2;
+    protected static final String CONFIG_PREFS_KEY = "config";
+    protected static final String HISTORY_PREFS_KEY = "history";
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -47,7 +49,6 @@ public class GenericActivity extends AppCompatActivity
         askString(this,"Introduza o URL do vídeo:","",(url)->
         {
             String urlString = url.toString();
-            //
             if (URLUtil.isValidUrl(urlString))
             {
                 Uri uri = Uri.parse(urlString);
@@ -61,10 +62,7 @@ public class GenericActivity extends AppCompatActivity
                 {
                     ((MainActivity)me).startVideo(uri);
                 }
-//                r.run(uri);
-//                startVideo(uri);
             }
-            //toast(this,"Inserted phrase:"+url);
         });
     }
 }
