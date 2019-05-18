@@ -28,6 +28,8 @@ import java.util.TimerTask;
 
 import static com.perezjquim.UIHelper.askString;
 import static com.perezjquim.UIHelper.toast;
+import static com.perezjquim.UIHelper.openProgressDialog;
+import static com.perezjquim.UIHelper.closeProgressDialog;
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener
 {
@@ -40,8 +42,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private FullScreenMediaController mediaController;
     private AudioManager audioManager;
 
-    private static final int VIDEO_SEEK_MS = 2500;
-    private static final int VOLUME_CHANGE = 2;
+    private static final int VIDEO_SEEK_MS = 5000;
+    private static final int VOLUME_CHANGE = 4;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -223,14 +225,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
     public void startVideo(Uri uri){
+        openProgressDialog(this, "Carregando...");
         mediaController= new FullScreenMediaController(this,false);
         mediaController.setAnchorView(videoView);
         videoView.setMediaController(mediaController);
         videoView.setVideoURI(uri);
         videoView.requestFocus();
+        MainActivity me = this;
         videoView.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
             public void onPrepared(MediaPlayer mp) {
-                toast(MainActivity.this,"ABCD");
+//                toast(MainActivity.this,"ABCD");
+                closeProgressDialog(me);
                 videoView.start();
             }
         });

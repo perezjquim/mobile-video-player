@@ -19,7 +19,7 @@ public class SensorHandler
     private SensorManager _sensorManager;
     private OrientationHandler _orientationHandler;
     private MainActivity _act;
-    private static final int DOWN_THRESHOLD = 8;
+    private static final int DOWN_THRESHOLD = 5;
     private static final int UP_THRESHOLD = 2;
 
     private boolean canPerformActions = false;
