@@ -224,7 +224,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         videoView.setVideoURI(uri);
         videoView.requestFocus();
         videoView.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-            // Close the progress bar and play the video
             public void onPrepared(MediaPlayer mp) {
                 toast(MainActivity.this,"ABCD");
                 videoView.start();
