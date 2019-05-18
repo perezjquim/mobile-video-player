@@ -7,7 +7,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.media.AudioManager;
 import android.net.Uri;
-import android.os.Bundle;
+import android.os.*;
 import android.support.v7.app.*;
 import android.util.Log;
 import android.view.Menu;
@@ -35,7 +35,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private FullScreenMediaController mediaController;
     private AudioManager audioManager;
 
-    private static final int VIDEO_SEEK_MS = 1000;
+    private static final int VIDEO_SEEK_MS = 2500;
     private static final int VOLUME_CHANGE = 2;
 
     @Override
@@ -139,9 +139,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             }
             _setVolume(vol);
             System.out.println("@@ menos som @@");
+            _vibrate();
     }
 
-    public void vidSomMais(){
+    public void vidSomMais()
+    {
             int max = _getMaxVolume();
             int vol = _getVolume() + VOLUME_CHANGE;
             if (vol > max)
@@ -149,7 +151,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 vol = max;
             }
             _setVolume(vol);
-        System.out.println("@@ mais som @@");
+            System.out.println("@@ mais som @@");
+            _vibrate();
     }
 
     private int _getMaxVolume()
@@ -171,12 +174,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     {
             videoView.seekTo(videoView.getCurrentPosition() - VIDEO_SEEK_MS);
             System.out.println("@@ rebobinar @@");
+            _vibrate();
     }
 
     public void vidAvancar()
     {
             videoView.seekTo(videoView.getCurrentPosition() + VIDEO_SEEK_MS);
             System.out.println("@@ avançar @@");
+            _vibrate();
     }
 
     public void fullMinScreen(boolean full){
@@ -202,5 +207,19 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         videoView.setVideoURI(uri);
         videoView.requestFocus();
         videoView.start();
+    }
+
+    private static final int VIBRATION_TIME = 200;
+    private void _vibrate()
+    {
+        Vibrator vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
+        if (Build.VERSION.SDK_INT >= 26)
+        {
+            vibrator.vibrate(VibrationEffect.createOneShot(VIBRATION_TIME, VibrationEffect.DEFAULT_AMPLITUDE));
+        }
+        else
+        {
+            vibrator.vibrate(VIBRATION_TIME);
+        }
     }
 }

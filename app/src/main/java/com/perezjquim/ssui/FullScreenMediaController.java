@@ -10,6 +10,7 @@ import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.MediaController;
+import android.graphics.*;
 
 public class FullScreenMediaController extends MediaController
 {
@@ -26,12 +27,13 @@ public class FullScreenMediaController extends MediaController
     }
 
     @Override
-    public void setAnchorView(View view) {
+    public void setAnchorView(View view)
+    {
 
         super.setAnchorView(view);
 
         //image button for full screen to be added to media controller
-        fullScreen = new ImageButton (super.getContext());
+        fullScreen = new ImageButton(context);
 
         FrameLayout.LayoutParams params =
                 new FrameLayout.LayoutParams(LayoutParams.WRAP_CONTENT,
@@ -41,6 +43,9 @@ public class FullScreenMediaController extends MediaController
         addView(fullScreen, params);
 
         fullScreen.setImageResource(R.drawable.ic_fullscreen);
+        fullScreen.setColorFilter(getResources().getColor(R.color.colorAccent),
+                PorterDuff.Mode.SRC_ATOP);
+        fullScreen.setBackground(null);
 
         //add listener to image button to handle full screen and exit full screen events
         fullScreen.setOnClickListener(new OnClickListener() {
