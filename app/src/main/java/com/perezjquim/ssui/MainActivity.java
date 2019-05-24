@@ -37,8 +37,10 @@ public class MainActivity extends GenericActivity implements SensorEventListener
     private AudioManager audioManager;
     private SharedPreferencesHelper _prefs;
 
-    private static final int VIDEO_SEEK_MS = 5000;
-    private static final int VOLUME_CHANGE = 4;
+    private static final int VIDEO_SEEK_MS = 1000;
+    private static final int VOLUME_CHANGE = 1;
+    private static final int VIBRATION_TIME = 55;
+    private static final int MAX_LIST_ITEMS = 3;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -166,16 +168,25 @@ public class MainActivity extends GenericActivity implements SensorEventListener
 
     public void vidRebobinar()
     {
-            videoView.seekTo(videoView.getCurrentPosition() - VIDEO_SEEK_MS);
-            System.out.println("@@ rebobinar @@");
-            _vibrate();
+        int position = videoView.getCurrentPosition();
+        if (position > 0)
+        {
+            videoView.seekTo(position - VIDEO_SEEK_MS);
+        }
+        System.out.println("@@ rebobinar @@");
+        _vibrate();
     }
 
     public void vidAvancar()
     {
-            videoView.seekTo(videoView.getCurrentPosition() + VIDEO_SEEK_MS);
-            System.out.println("@@ avançar @@");
-            _vibrate();
+        int position = videoView.getCurrentPosition();
+        int duration = videoView.getDuration();
+        if (position < duration)
+        {
+            videoView.seekTo(position + VIDEO_SEEK_MS);
+        }
+        System.out.println("@@ avançar @@");
+        _vibrate();
     }
 
     public void fullMinScreen(boolean full){
@@ -216,7 +227,7 @@ public class MainActivity extends GenericActivity implements SensorEventListener
         });
     }
 
-    private static final int VIBRATION_TIME = 200;
+
     private void _vibrate()
     {
         Vibrator vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
@@ -230,8 +241,6 @@ public class MainActivity extends GenericActivity implements SensorEventListener
         }
     }
 
-
-    private static final int MAX_LIST_ITEMS = 3;
     private void _saveHistory(Uri uri)
     {
         String sData = _prefs.getString(CONFIG_PREFS_KEY,HISTORY_PREFS_KEY);

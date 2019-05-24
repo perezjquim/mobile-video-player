@@ -19,14 +19,12 @@ public class SensorHandler
     private SensorManager _sensorManager;
     private OrientationHandler _orientationHandler;
     private MainActivity _act;
+
+    private static final int PROXIMITY_THRESHOLD = 4;
     private static final int DOWN_THRESHOLD = 5;
     private static final int UP_THRESHOLD = 2;
 
     private boolean canPerformActions = false;
-    private boolean performedAction = false;     // MET
-
-    private static final int ACTION_THRESHOLD_MS = 5000;
-    private static final int PROXIMITY_THRESHOLD = 4;
 
     public SensorHandler(MainActivity act)
     {
@@ -67,10 +65,7 @@ public class SensorHandler
 
     private void _handleProximity(SensorEvent event)
     {
-        if(event.values[0] <= PROXIMITY_THRESHOLD)
-        {
-            _toggleActions();
-        }
+        canPerformActions = event.values[0] <= PROXIMITY_THRESHOLD;
     }
 
     private void _handleAccelerometer(SensorEvent event)
@@ -194,7 +189,6 @@ public class SensorHandler
             System.out.println(">> up");
             if(canPerformActions)
             {
-                performedAction();
                 _act.vidSomMais();
             }
         }
@@ -204,7 +198,6 @@ public class SensorHandler
             System.out.println(">> down");
             if(canPerformActions)
             {
-                performedAction();
                 _act.vidSomMenos();
             }
         }
@@ -214,7 +207,6 @@ public class SensorHandler
             System.out.println(">> left");
             if(canPerformActions)
             {
-                performedAction();
                 _act.vidRebobinar();
             }
         }
@@ -224,7 +216,6 @@ public class SensorHandler
             System.out.println(">> right");
             if(canPerformActions)
             {
-                performedAction();
                 _act.vidAvancar();
             }
         }
@@ -242,33 +233,5 @@ public class SensorHandler
                         y > (-TILTING_THRESHOLD)
                         &&
                         y < (TILTING_THRESHOLD));
-    }
-
-    public void performedAction()
-    {
-        performedAction = true;
-        canPerformActions = false;
-    }
-
-    // proximity sensor triggered
-    public void _toggleActions()
-    {
-        if(!canPerformActions)
-        {
-            canPerformActions = true;
-            System.out.println(":: açoes on ::");
-            new Timer().schedule(new TimerTask()
-            {
-                @Override
-                public void run()
-                {
-                    if (!performedAction)
-                    {
-                        canPerformActions = false;
-                        System.out.println(":: açoes off ::");
-                    }
-                }
-            }, ACTION_THRESHOLD_MS);
-        }
     }
 }
