@@ -253,6 +253,11 @@ public class MainActivity extends GenericActivity implements SensorEventListener
         {
             case ContentResolver.SCHEME_CONTENT:
                 path = _getFilePath(uri);
+                if(path.equals(""))
+                {
+                    toast(this,"Error while opening video!");
+                    return;
+                }
                 break;
 
             case "http":
@@ -341,19 +346,35 @@ public class MainActivity extends GenericActivity implements SensorEventListener
 
     private String _getFilePath(Uri uri)
     {
-        Cursor cursor = getContentResolver().query(uri, null, null, null, null);
-        cursor.moveToFirst();
-        String document_id = cursor.getString(0);
-        document_id = document_id.substring(document_id.lastIndexOf(":")+1);
-        cursor.close();
+        if(uri.toString().contains("content://com.android.providers.downloads.documents/document/raw"))
+        {
+            return uri.getPath().replace("/document/raw:","");
+        }
+        else
+        {
 
-        cursor = getContentResolver().query(
-                MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
-                null, MediaStore.Video.Media._ID + " = ? ", new String[]{document_id}, null);
-        cursor.moveToFirst();
-        String path = cursor.getString(cursor.getColumnIndex(MediaStore.Video.Media.DATA));
-        cursor.close();
+            Cursor cursor = getContentResolver().query(uri, null, null, null, null);
+            cursor.moveToFirst();
+            String document_id = cursor.getString(0);
+            document_id = document_id.substring(document_id.lastIndexOf(":") + 1);
+            cursor.close();
 
-        return path;
+            cursor = getContentResolver().query(
+                    MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+                    null, MediaStore.Video.Media._ID + " = ? ", new String[]{document_id}, null);
+            cursor.moveToFirst();
+
+            int index = cursor.getColumnIndex(MediaStore.Video.Media.DATA);
+
+            if (cursor.isNull(index))
+            {
+                return "";
+            }
+
+            String path = cursor.getString(index);
+            cursor.close();
+
+            return path;
+        }
     }
 }
