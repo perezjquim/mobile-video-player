@@ -169,7 +169,7 @@ public class MainActivity extends GenericActivity implements SensorEventListener
     public void vidRebobinar()
     {
         int position = videoView.getCurrentPosition();
-        if (position > 0)
+        if (position - VIDEO_SEEK_MS >= 0)
         {
             videoView.seekTo(position - VIDEO_SEEK_MS);
         }
@@ -181,9 +181,9 @@ public class MainActivity extends GenericActivity implements SensorEventListener
     {
         int position = videoView.getCurrentPosition();
         int duration = videoView.getDuration();
-        if (position < duration)
+        if (position + VIDEO_SEEK_MS*2 <= duration)
         {
-            videoView.seekTo(position + VIDEO_SEEK_MS);
+            videoView.seekTo(position + VIDEO_SEEK_MS*2);
         }
         System.out.println("@@ avançar @@");
         _vibrate();
